@@ -3,500 +3,442 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>抽签转盘</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#F2F2F7">
+    <title>桌球追分 (单机版)</title>
     <style>
         :root {
-            --primary: #007AFF;
-            --danger: #FF3B30;
-            --bg: #F2F2F7;
-            --card: #FFFFFF;
-            --text: #1D1D1F;
+            --bg-body: #F2F2F7; --bg-card: #FFFFFF;
+            --c-primary: #007AFF; --c-gold-s: #FF9500; --c-gold-b: #AF52DE; --c-gold-9: #FFD60A; 
+            --c-foul: #FF3B30; --c-let: #FF2D55;    
+            --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
         }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            padding: 0;
-            height: 100dvh; /* 锁定一屏高度 */
-            overflow: hidden; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* 保持垂直均匀分布 */
-            justify-content: space-evenly;
-            padding-top: calc(env(safe-area-inset-top) + 10px); 
-            padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
-            -webkit-tap-highlight-color: transparent;
-            color: var(--text);
-            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            background-color: var(--bg-body); margin: 0; padding: 0;
+            height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+            padding-top: max(10px, var(--safe-top)); padding-bottom: max(10px, var(--safe-bottom));
+            box-sizing: border-box; -webkit-user-select: none;
         }
-
-        /* 1. 标题 */
+        /* Header */
         header {
-            text-align: center;
-            flex-shrink: 0;
-            margin: 0; 
+            flex-shrink: 0; height: 44px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; position: relative;
         }
-
-        h1 { margin: 0; font-size: 26px; font-weight: 800; opacity: 0.9; }
-
-        /* 2. 转盘 */
-        .wheel-box {
-            position: relative;
-            width: 280px; 
-            height: 280px;
-            flex-shrink: 0;
-            margin: 0;
-            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.1));
+        .header-left { display: flex; gap: 8px; z-index: 2; }
+        .icon-btn {
+            background: none; border: none; padding: 6px; color: var(--c-primary); 
+            display: flex; align-items: center; cursor: pointer; border-radius: 50%;
         }
-
-        .wheel-border {
-            position: absolute;
-            inset: -8px;
-            border-radius: 50%;
-            background: linear-gradient(145deg, #ffffff, #e3e3e3);
-            z-index: 0;
-        }
-
-        canvas {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            display: block;
-            /* 【修改点1】这里改为 9s */
-            transition: transform 9s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        .pointer {
-            position: absolute;
-            top: -22px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 36px;
-            height: 46px;
-            z-index: 10;
-            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2));
-        }
+        .icon-btn:active { background: rgba(0,0,0,0.05); }
         
-        .pointer::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0;
-            width: 36px; height: 36px;
-            background: var(--danger);
-            border-radius: 50% 50% 0 50%;
-            transform: rotate(45deg);
+        .header-center {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            display: flex; flex-direction: column; align-items: center; z-index: 1; pointer-events: none;
         }
-        
-        .pointer::after {
-            content: '';
-            position: absolute;
-            left: 12px; top: 12px;
-            width: 12px; height: 12px;
-            background: white;
-            border-radius: 50%;
+        .toggle-box {
+            background: #E5E5EA; border-radius: 100px; padding: 2px; display: flex; pointer-events: auto;
+        }
+        .toggle-btn {
+            border: none; background: none; padding: 2px 12px; border-radius: 100px;
+            font-size: 13px; font-weight: 600; color: #8E8E93; transition: all 0.2s;
+        }
+        .toggle-btn.active { background: #FFF; color: #000; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .reset-btn { 
+            border: none; background: none; color: var(--c-foul); font-size: 15px; font-weight: 600; 
+            cursor: pointer; z-index: 2;
         }
 
-        .center-cap {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 44px; height: 44px;
-            background: #fff;
-            border-radius: 50%;
-            z-index: 5;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
+        .round-indicator-bar {
+            text-align: center; font-size: 13px; font-weight: 600; color: #8E8E93;
+            padding: 6px 0;
         }
 
-        /* 3. 控制面板 */
-        .controls {
-            width: 88%;
-            max-width: 360px;
-            background: var(--card);
-            border-radius: 20px;
-            padding: 18px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 2;
-            flex-shrink: 0; 
-            margin: 0; 
+        /* Main */
+        main {
+            flex: 1; display: flex; flex-direction: column; justify-content: space-evenly;
+            padding: 0 16px; gap: 10px; overflow: hidden; padding-bottom: 8px;
         }
+        .player-card {
+            background: var(--bg-card); border-radius: 18px; padding: 10px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex; flex-direction: column; justify-content: center; flex: 1; min-height: 0; 
+        }
+        .card-header-row {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0;
+        }
+        .left-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .rank-num {
+            width: 24px; height: 24px; background: var(--c-primary); color: white; 
+            font-size: 14px; font-weight: 700; border-radius: 6px; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
+        }
+        .p-name { font-size: 17px; font-weight: 600; color: #333; }
+        .p-score { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+        .score-p { color: #34C759; } .score-n { color: #FF3B30; } .score-z { color: #1C1C1E; }
 
-        .input-row { display: flex; gap: 8px; }
-        
-        input {
-            flex: 1;
-            background: #F2F2F7;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 16px;
-            outline: none;
-            color: var(--text);
+        .btn-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr);
+            gap: 6px; flex: 1; min-height: 0; 
         }
+        .act-btn {
+            border: none; border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; padding: 0;
+        }
+        .act-btn:active { opacity: 0.6; transform: scale(0.98); }
+        .btn-t { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .btn-s { font-size: 9px; opacity: 0.7; font-weight: 500; letter-spacing: -0.2px; }
+        .b-norm { background: #E1F0FF; color: var(--c-primary); }
+        .b-sgold { background: #FFF3DC; color: var(--c-gold-s); }
+        .b-bgold { background: #F3E5F5; color: var(--c-gold-b); }
+        .b-gold9 { background: #FFFDE7; color: #9A7D0A; } 
+        .b-foul { background: #FFEEEE; color: var(--c-foul); }
+        .b-let { background: #FFF0F5; color: var(--c-let); }
 
-        .btn-add {
-            background: #E5E5EA;
-            color: var(--primary);
-            font-weight: 600;
-            border: none;
-            padding: 0 14px;
-            border-radius: 10px;
-            font-size: 14px;
-            white-space: nowrap;
+        footer {
+            flex-shrink: 0; display: flex; justify-content: space-between;
+            padding: 0 16px; gap: 12px; height: 42px;
         }
-        .btn-add:active { background: #D1D1D6; }
+        .footer-btn {
+            flex: 1; border-radius: 21px; display: flex; align-items: center; justify-content: center; gap: 6px;
+            font-size: 14px; font-weight: 600; border: none; cursor: pointer;
+        }
+        .btn-undo { background: #FFF; color: #555; border: 1px solid #E5E5EA; }
+        .btn-save { background: #1C1C1E; color: #FFF; }
 
-        .list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 2px;
-            margin-bottom: -5px;
+        /* Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
+            z-index: 100; display: none; opacity: 0; transition: opacity 0.25s;
+            justify-content: center; align-items: center;
         }
-        
-        .list-title { font-size: 12px; color: #8E8E93; font-weight: 600; }
-        
-        .btn-reset {
-            background: transparent;
-            color: var(--danger);
-            border: none;
-            font-size: 12px;
-            font-weight: 500;
-            padding: 4px 8px;
-            margin-right: -8px;
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .center-box {
+            background: #FFF; width: 300px; max-width: 90%; border-radius: 18px; 
+            padding: 20px; text-align: center; transform: scale(0.9); transition: transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;
         }
+        .modal-overlay.show .center-box { transform: scale(1); }
+        .setting-opt {
+            background: #F2F2F7; padding: 10px; border-radius: 10px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+        }
+        .setting-opt.selected { background: #E1F0FF; border: 1px solid var(--c-primary); }
 
-        .tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            max-height: 80px; 
-            overflow-y: auto;
-            min-height: 30px;
+        /* Stats Grid & Badges */
+        .res-stats { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; 
         }
+        .stat-badge {
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; padding: 4px 2px; border-radius: 4px; 
+            font-weight: 600; margin: 0; white-space: nowrap;
+        }
+        .sb-gold { background: #F3E5F5; color: var(--c-gold-b); }
+        .sb-small { background: #FFF3DC; color: var(--c-gold-s); }
+        .sb-g9 { background: #FFFDE7; color: #9A7D0A; }
+        .sb-win { background: #E1F0FF; color: var(--c-primary); }
 
-        .tag {
-            background: #F2F2F7;
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            animation: fadeIn 0.2s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        
-        .tag-del { color: #C7C7CC; font-weight: bold; font-size: 14px; }
-
-        .empty-hint {
-            text-align: center;
-            color: #C7C7CC;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
-        /* 4. 底部按钮 */
-        .btn-spin {
-            width: 88%;
-            max-width: 360px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 16px;
-            font-size: 18px;
-            font-weight: 600;
-            box-shadow: 0 5px 20px rgba(0, 122, 255, 0.25);
-            transition: transform 0.1s;
-            flex-shrink: 0;
-            margin: 0; 
-        }
-        .btn-spin:active { transform: scale(0.97); }
-        .btn-spin:disabled { opacity: 0.5; background: #999; box-shadow: none; }
-
-        /* 弹窗 */
-        .modal {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .modal.show { display: flex; opacity: 1; }
-        
-        .modal-box {
-            background: white;
-            padding: 25px 30px;
-            border-radius: 24px;
-            width: 70%;
-            max-width: 280px;
-            text-align: center;
-            transform: scale(0.9);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .modal.show .modal-box { transform: scale(1); }
-        
-        .result-val { font-size: 30px; font-weight: 800; color: var(--primary); margin: 15px 0; }
-        
-        .btn-close {
-            background: #F2F2F7;
-            color: var(--text);
-            border: none;
-            padding: 10px 30px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 15px;
-        }
-
+        .result-row { display: flex; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #F2F2F7; }
+        .res-rank { font-size: 24px; width: 36px; padding-top: 0px; text-align: center;}
+        .res-name { flex: 1; text-align: left; font-weight: 700; font-size: 16px; margin-bottom: 4px;}
+        .res-score { font-weight: 800; font-size: 18px; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>抽签转盘</h1>
+        <div class="header-left">
+            <button class="icon-btn" onclick="openSettings()">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+
+        <div class="header-center">
+            <div class="toggle-box">
+                <button class="toggle-btn" id="mode2" onclick="switchMode(2)">2人</button>
+                <button class="toggle-btn active" id="mode3" onclick="switchMode(3)">3人</button>
+            </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetGame()">重置</button>
     </header>
+    
+    <div id="roundDisplay" class="round-indicator-bar">第 0 回合</div>
 
-    <div class="wheel-box">
-        <div class="wheel-border"></div>
-        <div class="pointer"></div>
-        <div class="center-cap">✨</div>
-        <canvas id="canvas"></canvas>
+    <main id="container"></main>
+
+    <footer>
+        <button class="footer-btn btn-undo" onclick="undo()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>撤销
+        </button>
+        <button class="footer-btn btn-save" onclick="settleGame()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>结算战绩
+        </button>
+    </footer>
+
+    <div class="modal-overlay" id="settingsModal">
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:700; margin-bottom:12px;">设置规则</div>
+            <div style="text-align:left; font-size:12px; color:#8E8E93; margin-bottom:6px;">2人局计分机制</div>
+            <div class="setting-opt selected" id="optTransfer" onclick="setScoreMode('transfer')">
+                <div><span style="font-weight:600;font-size:14px;">给付制</span><div style="font-size:10px;color:#888">赢+10 输-10</div></div>
+                <div style="color:var(--c-primary); font-weight:bold;">✓</div>
+            </div>
+            <div class="setting-opt" id="optRace" onclick="setScoreMode('race')">
+                <div><span style="font-weight:600;font-size:14px;">抢分制</span><div style="font-size:10px;color:#888">赢+10 输0</div></div>
+                <div style="color:var(--c-primary); font-weight:bold; display:none;">✓</div>
+            </div>
+            <div class="modal-btns" style="margin-top:16px;">
+                <button class="m-btn" style="background:var(--c-primary); color:#FFF; flex:1; padding:10px; border:none; border-radius:12px; font-size:15px; font-weight:600;" onclick="closeSettings()">完成</button>
+            </div>
+        </div>
     </div>
 
-    <div class="controls">
-        <div class="input-row">
-            <input type="text" id="input" placeholder="输入选项 (如: 奶茶)" maxlength="10">
-            <button class="btn-add" onclick="addItem()">添加</button>
-        </div>
-
-        <div class="list-header">
-            <span class="list-title">已添加选项</span>
-            <button class="btn-reset" onclick="resetItems()">清空</button>
-        </div>
-
-        <div class="tags" id="tags"></div>
-        <div class="empty-hint" id="hint">空空如也，快添加几个吧</div>
-    </div>
-
-    <button class="btn-spin" id="spinBtn" onclick="spin()" disabled>请添加选项</button>
-
-    <div class="modal" id="modal">
-        <div class="modal-box">
-            <div style="font-size:14px; color:#8E8E93">结果是</div>
-            <div class="result-val" id="result">?</div>
-            <button class="btn-close" onclick="closeModal()">好的</button>
+    <div class="modal-overlay" id="nameModal">
+        <div class="center-box">
+            <div style="font-size:16px; font-weight:700;">修改名字</div>
+            <input type="text" class="modal-input" id="nameInput" placeholder="输入新名字" maxlength="8" style="width:100%; padding:12px; background:#F2F2F7; border:none; border-radius:12px; margin:16px 0; text-align:center;">
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; padding:10px; border:none; border-radius:12px; background:#F2F2F7; color:#8E8E93; font-weight:600;" onclick="closeNameModal()">取消</button>
+                <button style="flex:1; padding:10px; border:none; border-radius:12px; background:var(--c-primary); color:#FFF; font-weight:600;" onclick="saveName()">确定</button>
+            </div>
         </div>
     </div>
 
-    <script>
-        var items = [];
-        var isSpinning = false;
-        var currentRot = 0;
-        var canvas, ctx, size, dpr;
-        var colors = [
-            '#FFB7B2', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFDAC1', 
-            '#FF9AA2', '#A0E7E5', '#FFAEBC', '#B4F8C8', '#FBE7C6'
-        ];
+    <div class="modal-overlay" id="summaryModal">
+        <div class="center-box" style="width:320px;">
+            <div id="summaryTitle" style="font-size:18px; font-weight:800; margin-bottom:4px;">战局结算</div>
+            <div style="font-size:12px; color:#8E8E93; margin-bottom:16px;">统计已完成</div>
+            <div id="summaryContent"></div>
+            <button style="width:100%; margin-top:16px; padding:12px; background:var(--c-primary); color:#FFF; border:none; border-radius:12px; font-weight:600;" onclick="closeSummary()">关闭</button>
+        </div>
+    </div>
 
-        window.onload = function() {
-            canvas = document.getElementById('canvas');
-            ctx = canvas.getContext('2d');
-            size = 280; 
-            dpr = window.devicePixelRatio || 2;
-            canvas.width = size * dpr;
-            canvas.height = size * dpr;
-            ctx.scale(dpr, dpr);
+<script>
+    const emptyStats = () => ({ bigGold: 0, smallGold: 0, gold9: 0, normal: 0 });
 
-            // 监听回车键，同样支持连续输入
-            document.getElementById('input').addEventListener('keypress', function(e){
-                if(e.key === 'Enter') addItem();
-            });
-            updateUI();
-        };
+    let state = {
+        mode: 3,
+        round: 0, 
+        scoreMode: 'transfer', 
+        players: [
+            { id: 0, name: '玩家 A', score: 0, stats: emptyStats() },
+            { id: 1, name: '玩家 B', score: 0, stats: emptyStats() },
+            { id: 2, name: '玩家 C', score: 0, stats: emptyStats() }
+        ],
+        history: [] // 仅用于撤销
+    };
+    let currentEditIndex = -1;
 
-        window.addItem = function() {
-            var input = document.getElementById('input');
-            var val = input.value.trim();
-            
-            if(!val) {
-                input.focus();
-                return;
+    function getRelations(curr, total) {
+        return { prev: (curr - 1 + total) % total, next: (curr + 1) % total };
+    }
+
+    function handleAction(idx, type) {
+        saveState(); 
+        state.round++;
+        document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
+
+        const total = state.mode;
+        const { prev, next } = getRelations(idx, total);
+        let ps = state.players;
+        const scores = { normal: 4, smallGold: 7, bigGold: 20, gold9: 8, foul: 1 };
+
+        if (!ps[idx].stats) ps[idx].stats = emptyStats();
+        
+        if (type === 'normal') ps[idx].stats.normal++;
+        else if (type === 'smallGold') ps[idx].stats.smallGold++;
+        else if (type === 'bigGold') ps[idx].stats.bigGold++;
+        else if (type === 'gold9') ps[idx].stats.gold9++;
+
+        if (total === 3) {
+            switch (type) {
+                case 'normal': ps[idx].score += 4; ps[prev].score -= 4; break;
+                case 'smallGold': ps[idx].score += 7; ps[prev].score -= 7; break;
+                case 'bigGold': ps[idx].score += 20; ps[prev].score -= 10; ps[next].score -= 10; break;
+                case 'gold9': ps[prev].score -= 4; ps[next].score -= 4; ps[idx].score += 8; break;
+                case 'foul': ps[idx].score -= 1; ps[prev].score += 1; break;
+                case 'letFoul': ps[idx].score -= 1; ps[next].score += 1; break;
             }
-            
-            if(items.length >= 20) { 
-                alert('选项太多啦'); 
-                return; 
+        } else if (total === 2) {
+            const isRace = state.scoreMode === 'race'; 
+            const opponentIdx = next;
+            switch (type) {
+                case 'normal': 
+                    ps[idx].score += scores.normal; if (!isRace) ps[opponentIdx].score -= scores.normal; 
+                    break;
+                case 'smallGold': 
+                    ps[idx].score += scores.smallGold; if (!isRace) ps[opponentIdx].score -= scores.smallGold; 
+                    break;
+                case 'bigGold': 
+                    ps[idx].score += 10; if (!isRace) ps[opponentIdx].score -= 10; 
+                    break;
+                case 'gold9': 
+                    ps[idx].score += 4; if (!isRace) ps[opponentIdx].score -= 4; 
+                    break;
+                case 'foul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
+                case 'letFoul': ps[idx].score -= 1; if (!isRace) ps[opponentIdx].score += 1; break;
             }
-            
-            items.push(val);
-            input.value = ''; 
-            
-            updateUI();
-            
-            // 保持焦点在输入框，方便连续输入
-            input.focus();
-        };
+        }
+        render();
+        if(navigator.vibrate) navigator.vibrate(15);
+    }
 
-        window.resetItems = function() {
-            if(isSpinning) return;
-            if(items.length === 0) return;
-            if(confirm('确定要清空所有选项吗？')) {
-                items = [];
-                currentRot = 0;
-                canvas.style.transition = 'none'; 
-                canvas.style.transform = 'rotate(0deg)';
-                updateUI();
-            }
-        };
-
-        window.removeItem = function(index) {
-            if(isSpinning) return;
-            items.splice(index, 1);
-            updateUI();
-        };
-
-        window.spin = function() {
-            if(isSpinning || items.length < 2) return;
-            
-            document.getElementById('input').blur();
-
-            isSpinning = true;
-            document.getElementById('spinBtn').disabled = true;
-            
-            // 【修改点2】这里改为 9s
-            canvas.style.transition = 'transform 9s cubic-bezier(0.2, 0.8, 0.2, 1)';
-            var baseRot = 2880; 
-            var randRot = Math.floor(Math.random() * 360);
-            currentRot += (baseRot + randRot);
-            canvas.style.transform = 'rotate(-' + currentRot + 'deg)';
-
-            // 【修改点3】这里改为 9000毫秒 (9秒)
-            setTimeout(function() {
-                isSpinning = false;
-                document.getElementById('spinBtn').disabled = false;
-                showResult();
-            }, 9000);
-        };
-
-        window.closeModal = function() {
-            var modal = document.getElementById('modal');
-            modal.classList.remove('show');
-            setTimeout(function() { modal.style.display = 'none'; }, 300);
-        };
-
-        function updateUI() {
-            var tagBox = document.getElementById('tags');
-            var hint = document.getElementById('hint');
-            var btn = document.getElementById('spinBtn');
-
-            if(items.length === 0) {
-                tagBox.innerHTML = '';
-                hint.style.display = 'block';
-            } else {
-                hint.style.display = 'none';
-                var html = '';
-                for(var i=0; i<items.length; i++) {
-                    html += '<div class="tag" onclick="removeItem('+i+')">' + 
-                            items[i] + ' <span class="tag-del">×</span></div>';
-                }
-                tagBox.innerHTML = html;
-            }
-
-            if(items.length < 2) {
-                btn.disabled = true;
-                btn.innerText = items.length === 0 ? "请添加选项" : "至少需2个选项";
-                btn.style.opacity = "0.5";
-            } else {
-                btn.disabled = false;
-                btn.innerText = "开始转动";
-                btn.style.opacity = "1";
-            }
-            drawWheel();
+    function render() {
+        const box = document.getElementById('container');
+        box.innerHTML = '';
+        
+        let txtBig = '通吃 20'; let txtG9 = '通吃 8';
+        if (state.mode === 2) {
+            if (state.scoreMode === 'transfer') { txtBig = '自+10 他-10'; txtG9 = '自+4 他-4'; } 
+            else { txtBig = '自+10'; txtG9 = '自+4'; }
         }
 
-        function drawWheel() {
-            var cx = size / 2;
-            var cy = size / 2;
-            var r = size / 2;
+        state.players.forEach((p, i) => {
+            let sc = p.score > 0 ? 'score-p' : (p.score < 0 ? 'score-n' : 'score-z');
+            let sig = p.score > 0 ? '+' : '';
+            const el = document.createElement('div');
+            el.className = 'player-card';
+            el.innerHTML = `
+                <div class="card-header-row">
+                    <div class="left-info" onclick="openNameModal(${i})">
+                        <div class="rank-num">${i + 1}</div>
+                        <div class="p-name">${p.name}</div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#CCC"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                    </div>
+                    <div class="p-score ${sc}">${sig}${p.score}</div>
+                </div>
+                <div class="btn-grid">
+                    <button class="act-btn b-bgold" onclick="handleAction(${i}, 'bigGold')"><span class="btn-t">大金</span><span class="btn-s">${txtBig}</span></button>
+                    <button class="act-btn b-sgold" onclick="handleAction(${i}, 'smallGold')"><span class="btn-t">小金</span><span class="btn-s">自+7 上-7</span></button>
+                    <button class="act-btn b-gold9" onclick="handleAction(${i}, 'gold9')"><span class="btn-t">黄金9</span><span class="btn-s">${txtG9}</span></button>
+                    <button class="act-btn b-foul" onclick="handleAction(${i}, 'foul')"><span class="btn-t">犯规</span><span class="btn-s">给上家 1</span></button>
+                    <button class="act-btn b-norm" onclick="handleAction(${i}, 'normal')"><span class="btn-t">普胜</span><span class="btn-s">自+4 上-4</span></button>
+                    <button class="act-btn b-let" onclick="handleAction(${i}, 'letFoul')"><span class="btn-t">让杆犯规</span><span class="btn-s">给下家 1</span></button>
+                </div>
+            `;
+            box.appendChild(el);
+        });
+    }
 
-            ctx.clearRect(0, 0, size, size);
-            ctx.save();
+    // 纯前端结算函数
+    function settleGame() {
+        if(!confirm("确认结束本局并查看统计吗？")) return;
+        showSummary();
+    }
 
-            if(items.length === 0) {
-                ctx.beginPath();
-                ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                ctx.fillStyle = "#F2F2F7";
-                ctx.fill();
-                ctx.strokeStyle = "#E5E5EA";
-                ctx.lineWidth = 2;
-                ctx.setLineDash([10, 10]);
-                ctx.stroke();
-                ctx.restore();
-                return;
-            }
+    function showSummary() {
+        document.getElementById('summaryTitle').innerText = `战局结算 (共 ${state.round} 回合)`;
+        
+        const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+        const medals = ['🥇', '🥈', '🥉'];
+        
+        let html = '';
+        sortedPlayers.forEach((p, idx) => {
+            const medal = medals[idx] || (idx + 1);
+            const color = p.score > 0 ? '#34C759' : (p.score < 0 ? '#FF3B30' : '#000');
+            const sign = p.score > 0 ? '+' : '';
+            const st = p.stats || emptyStats();
+            
+            html += `
+                <div class="result-row">
+                    <div class="res-rank">${medal}</div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span class="res-name">${p.name}</span>
+                            <span class="res-score" style="color:${color}">${sign}${p.score}</span>
+                        </div>
+                        <div class="res-stats">
+                            <span class="stat-badge sb-gold">大金:${st.bigGold}</span>
+                            <span class="stat-badge sb-small">小金:${st.smallGold}</span>
+                            <span class="stat-badge sb-g9">黄金9:${st.gold9}</span>
+                            <span class="stat-badge sb-win">普胜:${st.normal}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        document.getElementById('summaryContent').innerHTML = html;
+        const modal = document.getElementById('summaryModal');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    }
+    
+    function closeSummary() {
+        const modal = document.getElementById('summaryModal');
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
 
-            var step = (Math.PI * 2) / items.length;
-            for(var i=0; i<items.length; i++) {
-                var angle = i * step;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.arc(cx, cy, r, angle, angle + step);
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r);
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 3;
-                ctx.stroke();
+    function undo() {
+        if (state.history.length === 0) return alert("没有操作可撤销");
+        const previousState = state.history.pop();
+        state.players = JSON.parse(JSON.stringify(previousState.players));
+        state.round = Math.max(0, state.round - 1); 
+        document.getElementById('roundDisplay').innerText = `第 ${state.round} 回合`;
+        render();
+    }
+    
+    function saveState() {
+        if (state.history.length > 20) state.history.shift();
+        state.history.push({
+            players: JSON.parse(JSON.stringify(state.players))
+        });
+    }
 
-                ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(angle + step/2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = "#333";
-                ctx.font = "bold 16px -apple-system";
-                ctx.shadowColor = "rgba(255,255,255,0.5)";
-                ctx.shadowBlur = 4;
-                ctx.fillText(items[i], r - 25, 5);
-                ctx.restore();
-            }
-            ctx.restore();
+    function resetGame() {
+        if (confirm("确定重置?")) {
+            state.round = 0;
+            document.getElementById('roundDisplay').innerText = `第 0 回合`;
+            state.history = []; 
+            state.players.forEach(p => { p.score = 0; p.stats = emptyStats(); }); 
+            render();
         }
+    }
 
-        function showResult() {
-            var actualDeg = currentRot % 360;
-            var slice = 360 / items.length;
-            var pointerAngle = (actualDeg + 90) % 360;
-            var idx = Math.floor((360 - pointerAngle) / slice) % items.length;
-            if(idx < 0) idx = 0;
-            document.getElementById('result').innerText = items[idx];
-            var modal = document.getElementById('modal');
-            modal.style.display = 'flex';
-            setTimeout(function() { modal.classList.add('show'); }, 10);
-            if(navigator.vibrate) navigator.vibrate(50);
+    function switchMode(n) {
+        if (state.mode === n) return;
+        if (!confirm('切换人数会重置比分')) return;
+        state.mode = n;
+        state.round = 0; 
+        document.getElementById('roundDisplay').innerText = `第 0 回合`;
+        document.getElementById('mode2').className = n === 2 ? 'toggle-btn active' : 'toggle-btn';
+        document.getElementById('mode3').className = n === 3 ? 'toggle-btn active' : 'toggle-btn';
+        state.history = []; state.players = [];
+        const defs = ['玩家 A', '玩家 B', '玩家 C'];
+        for(let i=0; i<n; i++) state.players.push({ id: i, name: defs[i], score: 0, stats: emptyStats() });
+        render();
+    }
+    
+    const settingsModal = document.getElementById('settingsModal');
+    const optTransfer = document.getElementById('optTransfer');
+    const optRace = document.getElementById('optRace');
+
+    function openSettings() {
+        if (state.scoreMode === 'transfer') {
+            optTransfer.classList.add('selected'); optTransfer.querySelector('div:last-child').style.display = 'block';
+            optRace.classList.remove('selected'); optRace.querySelector('div:last-child').style.display = 'none';
+        } else {
+            optRace.classList.add('selected'); optRace.querySelector('div:last-child').style.display = 'block';
+            optTransfer.classList.remove('selected'); optTransfer.querySelector('div:last-child').style.display = 'none';
         }
-    </script>
+        settingsModal.style.display = 'flex'; setTimeout(() => settingsModal.classList.add('show'), 10);
+    }
+    function closeSettings() { settingsModal.classList.remove('show'); setTimeout(() => settingsModal.style.display = 'none', 200); render(); }
+    function setScoreMode(mode) { state.scoreMode = mode; openSettings(); }
+    
+    const nModal = document.getElementById('nameModal');
+    const nInput = document.getElementById('nameInput');
+    function openNameModal(i) { currentEditIndex = i; nInput.value = ''; nModal.style.display = 'flex'; setTimeout(() => nModal.classList.add('show'), 10); setTimeout(() => nInput.focus(), 50); }
+    function closeNameModal() { nModal.classList.remove('show'); setTimeout(() => { nModal.style.display = 'none'; nInput.blur(); }, 200); }
+    function saveName() { const val = nInput.value.trim(); if(val) { state.players[currentEditIndex].name = val; render(); } closeNameModal(); }
+    nInput.addEventListener('keypress', (e) => { if(e.key==='Enter') saveName(); });
+
+    render();
+</script>
 </body>
 </html>
