@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>抽签转盘</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>抽签转盘</title>
     <style>
         :root {
             --primary: #007AFF;
@@ -12,6 +16,12 @@
             --bg: #F2F2F7;
             --card: #FFFFFF;
             --text: #1D1D1F;
+        }
+
+        /* 【关键修改 3】强制 html 和 body 同色，解决上下滑动露出白色背景的问题 */
+        html {
+            background-color: var(--bg);
+            height: 100%; /* 配合 body 的 dvh */
         }
 
         body {
@@ -26,8 +36,11 @@
             align-items: center;
             /* 保持垂直均匀分布 */
             justify-content: space-evenly;
-            padding-top: calc(env(safe-area-inset-top) + 10px); 
-            padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
+            
+            /* 适配刘海屏和底部黑条，增加一点额外呼吸空间 */
+            padding-top: calc(env(safe-area-inset-top) + 15px); 
+            padding-bottom: calc(env(safe-area-inset-bottom) + 15px);
+            
             -webkit-tap-highlight-color: transparent;
             color: var(--text);
             box-sizing: border-box;
@@ -67,7 +80,7 @@
             height: 100%;
             border-radius: 50%;
             display: block;
-            /* 【修改点1】这里改为 9s */
+            /* 9秒动画 */
             transition: transform 9s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
@@ -327,7 +340,6 @@
             canvas.height = size * dpr;
             ctx.scale(dpr, dpr);
 
-            // 监听回车键，同样支持连续输入
             document.getElementById('input').addEventListener('keypress', function(e){
                 if(e.key === 'Enter') addItem();
             });
@@ -353,7 +365,7 @@
             
             updateUI();
             
-            // 保持焦点在输入框，方便连续输入
+            // 保持焦点在输入框
             input.focus();
         };
 
@@ -383,14 +395,13 @@
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
             
-            // 【修改点2】这里改为 9s
+            // 9秒动画
             canvas.style.transition = 'transform 9s cubic-bezier(0.2, 0.8, 0.2, 1)';
             var baseRot = 2880; 
             var randRot = Math.floor(Math.random() * 360);
             currentRot += (baseRot + randRot);
             canvas.style.transform = 'rotate(-' + currentRot + 'deg)';
 
-            // 【修改点3】这里改为 9000毫秒 (9秒)
             setTimeout(function() {
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
