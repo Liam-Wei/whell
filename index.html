@@ -5,64 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
-    
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#F2F2F7">
     
     <title>抽签转盘</title>
     <style>
+        /* 【关键修正 2】使用您代码中的变量定义方式 */
         :root {
-            --primary: #007AFF;
-            --danger: #FF3B30;
-            --bg: #F2F2F7;
-            --card: #FFFFFF;
-            --text: #1D1D1F;
+            --bg-body: #F2F2F7;
+            --bg-card: #FFFFFF;
+            --c-primary: #007AFF;
+            --c-danger: #FF3B30;
+            --text-main: #1D1D1F;
+            --text-sub: #8E8E93;
+            /* 获取安全区域 */
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
         }
 
-        /* 【关键修改 3】强制 html 和 body 同色，解决上下滑动露出白色背景的问题 */
+        /* 【关键修正 3】Body 布局逻辑完全对齐您的参考代码 */
         html {
-            background-color: var(--bg);
-            height: 100%; /* 配合 body 的 dvh */
+            height: 100%;
+            background-color: var(--bg-body); /* 防止回弹露白 */
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
-            background-color: var(--bg);
+            background-color: var(--bg-body);
             margin: 0;
             padding: 0;
-            height: 100dvh; /* 锁定一屏高度 */
-            overflow: hidden; 
+            /* 锁定高度 */
+            height: 100dvh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* 保持垂直均匀分布 */
+            /* 保持均匀分布 */
             justify-content: space-evenly;
             
-            /* 适配刘海屏和底部黑条，增加一点额外呼吸空间 */
-            padding-top: calc(env(safe-area-inset-top) + 15px); 
-            padding-bottom: calc(env(safe-area-inset-bottom) + 15px);
+            /* 【核心】这里照搬了您的 Padding 逻辑，让背景色顶满状态栏 */
+            padding-top: max(10px, var(--safe-top));
+            padding-bottom: max(10px, var(--safe-bottom));
             
-            -webkit-tap-highlight-color: transparent;
-            color: var(--text);
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+            color: var(--text-main);
         }
 
-        /* 1. 标题 */
+        /* Header 样式微调，保持和整体风格一致 */
         header {
-            text-align: center;
             flex-shrink: 0;
-            margin: 0; 
+            text-align: center;
+            width: 100%;
+            /* 确保标题不会太靠上 */
+            margin-top: 10px; 
         }
 
-        h1 { margin: 0; font-size: 26px; font-weight: 800; opacity: 0.9; }
+        h1 { margin: 0; font-size: 28px; font-weight: 800; opacity: 0.9; letter-spacing: -0.5px; }
 
-        /* 2. 转盘 */
+        /* --- 转盘样式 --- */
         .wheel-box {
             position: relative;
             width: 280px; 
             height: 280px;
             flex-shrink: 0;
-            margin: 0;
-            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.1));
+            /* 阴影效果 */
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.1));
         }
 
         .wheel-border {
@@ -80,10 +90,11 @@
             height: 100%;
             border-radius: 50%;
             display: block;
-            /* 9秒动画 */
+            /* 保持 9秒 动画 */
             transition: transform 9s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
+        /* 指针 */
         .pointer {
             position: absolute;
             top: -22px;
@@ -100,7 +111,7 @@
             position: absolute;
             left: 0; top: 0;
             width: 36px; height: 36px;
-            background: var(--danger);
+            background: var(--c-danger);
             border-radius: 50% 50% 0 50%;
             transform: rotate(45deg);
         }
@@ -129,84 +140,85 @@
             font-size: 20px;
         }
 
-        /* 3. 控制面板 */
+        /* --- 控制面板 (参考了您的卡片样式) --- */
         .controls {
             width: 88%;
             max-width: 360px;
-            background: var(--card);
-            border-radius: 20px;
+            background: var(--bg-card);
+            border-radius: 18px; /* 稍微调整圆角以匹配参考代码风格 */
             padding: 18px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
             gap: 10px;
             z-index: 2;
             flex-shrink: 0; 
-            margin: 0; 
         }
 
         .input-row { display: flex; gap: 8px; }
         
         input {
             flex: 1;
-            background: #F2F2F7;
+            background: var(--bg-body);
             border: none;
-            padding: 10px 14px;
+            padding: 12px;
             border-radius: 10px;
             font-size: 16px;
             outline: none;
-            color: var(--text);
+            color: var(--text-main);
         }
 
         .btn-add {
             background: #E5E5EA;
-            color: var(--primary);
+            color: var(--c-primary);
             font-weight: 600;
             border: none;
-            padding: 0 14px;
+            padding: 0 16px;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 15px;
             white-space: nowrap;
         }
-        .btn-add:active { background: #D1D1D6; }
+        .btn-add:active { background: #D1D1D6; opacity: 0.8; }
 
         .list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 2px;
-            margin-bottom: -5px;
+            padding: 0 4px;
+            margin-bottom: -4px;
         }
         
-        .list-title { font-size: 12px; color: #8E8E93; font-weight: 600; }
+        .list-title { font-size: 13px; color: var(--text-sub); font-weight: 600; }
         
         .btn-reset {
             background: transparent;
-            color: var(--danger);
+            color: var(--c-danger);
             border: none;
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 13px;
+            font-weight: 600;
             padding: 4px 8px;
             margin-right: -8px;
+            cursor: pointer;
         }
 
         .tags {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            max-height: 80px; 
+            max-height: 90px; 
             overflow-y: auto;
-            min-height: 30px;
+            min-height: 36px;
         }
 
         .tag {
-            background: #F2F2F7;
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 13px;
+            background: var(--bg-body);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             gap: 4px;
+            font-weight: 500;
             animation: fadeIn 0.2s ease;
         }
         
@@ -215,70 +227,72 @@
             to { transform: scale(1); opacity: 1; }
         }
         
-        .tag-del { color: #C7C7CC; font-weight: bold; font-size: 14px; }
+        .tag-del { color: #C7C7CC; font-weight: bold; font-size: 16px; margin-left: 2px; }
 
         .empty-hint {
             text-align: center;
             color: #C7C7CC;
-            font-size: 12px;
-            margin-top: 5px;
+            font-size: 13px;
+            margin-top: 6px;
         }
 
-        /* 4. 底部按钮 */
+        /* --- 底部按钮 --- */
         .btn-spin {
             width: 88%;
             max-width: 360px;
-            background: var(--primary);
+            background: var(--c-primary);
             color: white;
             border: none;
             padding: 16px;
-            border-radius: 16px;
+            border-radius: 18px;
             font-size: 18px;
             font-weight: 600;
-            box-shadow: 0 5px 20px rgba(0, 122, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
             transition: transform 0.1s;
             flex-shrink: 0;
-            margin: 0; 
+            margin-bottom: 10px; /* 稍微留点底 */
         }
         .btn-spin:active { transform: scale(0.97); }
         .btn-spin:disabled { opacity: 0.5; background: #999; box-shadow: none; }
 
-        /* 弹窗 */
-        .modal {
+        /* --- 弹窗 --- */
+        .modal-overlay {
             position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
             backdrop-filter: blur(5px);
-            display: none;
-            justify-content: center;
-            align-items: center;
             z-index: 100;
+            display: none;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.25s;
+            justify-content: center; 
+            align-items: center;
         }
-        .modal.show { display: flex; opacity: 1; }
+        .modal-overlay.show { display: flex; opacity: 1; }
         
-        .modal-box {
-            background: white;
-            padding: 25px 30px;
-            border-radius: 24px;
-            width: 70%;
-            max-width: 280px;
+        .center-box {
+            background: #FFF;
+            padding: 24px;
+            border-radius: 20px;
+            width: 75%;
+            max-width: 300px;
             text-align: center;
             transform: scale(0.9);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        .modal.show .modal-box { transform: scale(1); }
+        .modal-overlay.show .center-box { transform: scale(1); }
         
-        .result-val { font-size: 30px; font-weight: 800; color: var(--primary); margin: 15px 0; }
+        .result-val { font-size: 32px; font-weight: 800; color: var(--c-primary); margin: 20px 0; }
         
         .btn-close {
-            background: #F2F2F7;
-            color: var(--text);
+            background: var(--bg-body);
+            color: var(--text-main);
             border: none;
-            padding: 10px 30px;
+            padding: 12px 32px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 16px;
+            cursor: pointer;
         }
 
     </style>
@@ -313,8 +327,8 @@
 
     <button class="btn-spin" id="spinBtn" onclick="spin()" disabled>请添加选项</button>
 
-    <div class="modal" id="modal">
-        <div class="modal-box">
+    <div class="modal-overlay" id="modal">
+        <div class="center-box">
             <div style="font-size:14px; color:#8E8E93">结果是</div>
             <div class="result-val" id="result">?</div>
             <button class="btn-close" onclick="closeModal()">好的</button>
@@ -322,6 +336,7 @@
     </div>
 
     <script>
+        // --- 逻辑部分保持您满意的版本不变 ---
         var items = [];
         var isSpinning = false;
         var currentRot = 0;
@@ -350,23 +365,13 @@
             var input = document.getElementById('input');
             var val = input.value.trim();
             
-            if(!val) {
-                input.focus();
-                return;
-            }
-            
-            if(items.length >= 20) { 
-                alert('选项太多啦'); 
-                return; 
-            }
+            if(!val) { input.focus(); return; }
+            if(items.length >= 20) { alert('选项太多啦'); return; }
             
             items.push(val);
             input.value = ''; 
-            
             updateUI();
-            
-            // 保持焦点在输入框
-            input.focus();
+            input.focus(); // 保持焦点
         };
 
         window.resetItems = function() {
@@ -390,7 +395,7 @@
         window.spin = function() {
             if(isSpinning || items.length < 2) return;
             
-            document.getElementById('input').blur();
+            document.getElementById('input').blur(); // 收起键盘
 
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
