@@ -502,12 +502,24 @@
         }
 
         function showResult() {
-            var actualDeg = currentRot % 360;
+            // 计算每一个选项所占的角度
             var slice = 360 / items.length;
-            var pointerAngle = (actualDeg + 90) % 360;
-            var idx = Math.floor((360 - pointerAngle) / slice) % items.length;
-            if(idx < 0) idx = 0;
+            
+            // 核心修正逻辑：
+            // 1. Canvas 0度在3点钟方向。
+            // 2. 指针在12点钟方向，也就是 Canvas 的 270度。
+            // 3. 转盘是逆时针转(-rotate)，相当于指针顺时针扫过转盘。
+            // 公式：(初始指针角度 + 旋转过的角度) % 360 = 指针最终停留在转盘上的哪个角度
+            var angleUnderPointer = (270 + currentRot) % 360;
+            
+            // 计算下标
+            var idx = Math.floor(angleUnderPointer / slice);
+            
+            // 防止万一浮点数计算超出范围
+            if(idx >= items.length) idx = 0;
+
             document.getElementById('result').innerText = items[idx];
+            
             var modal = document.getElementById('modal');
             modal.style.display = 'flex';
             setTimeout(function() { modal.classList.add('show'); }, 10);
