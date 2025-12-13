@@ -502,29 +502,34 @@
         }
 
         function showResult() {
-            // 计算每一个选项所占的角度
+            // 1. 计算每一份扇形的角度
             var slice = 360 / items.length;
-            
-            // 核心修正逻辑：
-            // 1. Canvas 0度在3点钟方向。
-            // 2. 指针在12点钟方向，也就是 Canvas 的 270度。
-            // 3. 转盘实际是逆时针旋转(-rotate)，等价于指针顺时针扫过转盘。
-            //    因此需要用指针角度减去已旋转角度，而不是相加。
-            // 公式：(指针初始角度 - (currentRot % 360) + 360) % 360
-            var normalizedRot = currentRot % 360;
-            var angleUnderPointer = (270 - normalizedRot + 360) % 360;
-            
-            // 计算下标
-            var idx = Math.floor(angleUnderPointer / slice);
-            
-            // 防止万一浮点数计算超出范围
-            if(idx >= items.length) idx = 0;
 
+            // 2. 计算指针最终停留在圆盘的哪个角度上
+            // 指针在顶部(270度)，转盘逆时针转(-rotate)，相当于指针顺时针跑了 currentRot 度
+            // 我们取余 360，得到最终落在 0-360 之间的角度
+            var angleUnderPointer = (270 + currentRot) % 360;
+
+            // 3. 计算下标
+            // 因为 Canvas 绘制是从 0 开始顺时针画的，直接除以每份角度即可
+            var idx = Math.floor(angleUnderPointer / slice);
+
+            // 4. 边界处理：防止万一计算出 idx 等于 items.length (例如 360度)
+            if (idx >= items.length) {
+                idx = 0;
+            }
+            
+            // 调试信息：你可以按 F12 在 Console 看到这个日志，确认计算是否符合直觉
+            console.log("旋转角度:", currentRot, "指针指向盘面角度:", angleUnderPointer, "计算结果:", items[idx]);
+
+            // 5. 显示弹窗
             document.getElementById('result').innerText = items[idx];
             
             var modal = document.getElementById('modal');
             modal.style.display = 'flex';
-            setTimeout(function() { modal.classList.add('show'); }, 10);
+            // 稍微延时一点点让 display:flex 生效后再加 class，确保动画流畅
+            setTimeout(function() { modal.classList.add('show'); }, 50);
+            
             if(navigator.vibrate) navigator.vibrate(50);
         }
     </script>
