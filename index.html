@@ -348,11 +348,22 @@
         var items = [];
         var isSpinning = false;
         var currentRot = 0;
+        var lastResultIdx = -1;
         var canvas, ctx, size, dpr;
         var colors = [
             '#FFB7B2', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFDAC1', 
             '#FF9AA2', '#A0E7E5', '#FFAEBC', '#B4F8C8', '#FBE7C6'
         ];
+
+        function randomInt(max) {
+            if(max <= 0) return 0;
+            if(window.crypto && window.crypto.getRandomValues) {
+                var u32 = new Uint32Array(1);
+                window.crypto.getRandomValues(u32);
+                return u32[0] % max;
+            }
+            return Math.floor(Math.random() * max);
+        }
 
         window.onload = function() {
             canvas = document.getElementById('canvas');
@@ -415,13 +426,16 @@
             // 9秒动画
             canvas.style.transition = 'transform 9s cubic-bezier(0.2, 0.8, 0.2, 1)';
             var slice = 360 / items.length;
-            var targetIdx = Math.floor(Math.random() * items.length);
+            var targetIdx = randomInt(items.length);
+            if(items.length > 1 && targetIdx === lastResultIdx) {
+                targetIdx = (targetIdx + 1 + randomInt(items.length - 1)) % items.length;
+            }
             var pointerAngle = 270;
             var desiredAngleUnderPointer = targetIdx * slice + slice / 2;
             var desiredMod = (desiredAngleUnderPointer - pointerAngle + 360) % 360;
             var currentMod = ((currentRot % 360) + 360) % 360;
             var rotDelta = (desiredMod - currentMod + 360) % 360;
-            var baseRot = 360 * (8 + Math.floor(Math.random() * 3));
+            var baseRot = 360 * (8 + randomInt(3));
             currentRot += (baseRot + rotDelta);
             canvas.style.transform = 'rotate(-' + currentRot + 'deg)';
 
@@ -433,6 +447,7 @@
                 document.getElementById('spinBtn').disabled = false;
                 document.getElementById('input').disabled = false;
                 if(addBtn) addBtn.disabled = false;
+                lastResultIdx = targetIdx;
                 showResult(targetIdx);
             }
 
